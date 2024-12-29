@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  labels:
+    app: backend
+spec:
+  replicas: 1 # Ensure high availability 
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: ranjansharma123/capstone:backend
+        ports:
+        - containerPort: 8080
+        envFrom:
+          - configMapRef:
+              name: app-config  # Refers to the ConfigMap to inject environment variables
+          - secretRef:
+              name: app-secrets  # Refers to the Secret to inject sensitive data
+        env:
+          - name: SPRING_PROFILES_ACTIVE
+            valueFrom:
+              configMapKeyRef:
+                name: app-config
+                key: SPRING_PROFILES_ACTIVE
+          - name: SPRING_DATASOURCE_URL
+            valueFrom:
+              configMapKeyRef:
+                name: app-config
+                key: SPRING_DATASOURCE_URL
+          - name: SPRING_DATASOURCE_USERNAME
+            valueFrom:
+              configMapKeyRef:
+                name: app-config
+                key: SPRING_DATASOURCE_USERNAME
+          - name: SPRING_DATASOURCE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: app-secrets
+                key: SPRING_DATASOURCE_PASSWORD
+          - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+            valueFrom:
+              configMapKeyRef:
+                name: app-config
+                key: SPRING_JPA_HIBERNATE_DDL_AUTO
+          - name: SPRING_JPA_DATABASE_PLATFORM
+            valueFrom:
+              configMapKeyRef:
+                name: app-config
+                key: SPRING_JPA_DATABASE_PLATFORM   
+          - name: JWT_EXPIRATION
+            valueFrom:
+              configMapKeyRef:
+                name: app-config
+                key: JWT_EXPIRATION
+          - name: JWT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: app-secrets
+                key: JWT_SECRET
+          - name: SPRING_MAIL_USERNAME
+            valueFrom:
+              configMapKeyRef:
+                name: app-config
+                key: SPRING_MAIL_USERNAME
+          - name: SPRING_MAIL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: app-secrets
+                key: SPRING_MAIL_PASSWORD
+         
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+spec:
+  selector:
+    app: backend
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
